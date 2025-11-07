@@ -35,7 +35,7 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#000000ff', // Netflix-style red
+    backgroundColor: '#ffffffff', // Netflix-style red
   },
   logo: {
     width: 200,  // adjust as needed
@@ -43,7 +43,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   title: {
-    color: '#fff',
+    color: '#000000ff',
     fontSize: 24,
     fontWeight: 'bold',
   },
