@@ -12,7 +12,7 @@ export default function Login() {
     if (!email || !password) return Alert.alert('Error', 'Please fill all fields');
 
     // Dummy auth: accept test@example.com / 1234
-    if (email === 'test@example.com' && password === '1234') {
+    if (email === 'test' && password === '1234') {
       await AsyncStorage.setItem('user', JSON.stringify({ email, name: 'Stream User' }));
       router.replace('/(tabs)'); // go to tabs
     } else {

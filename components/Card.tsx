@@ -1,6 +1,8 @@
 // components/Card.tsx
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { View, Text, Image, TouchableOpacity, StyleSheet } from 'react-native';
+import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 type Props = {
   title: string;
@@ -8,19 +10,20 @@ type Props = {
   image?: string;
   onPress?: () => void;
   rightAction?: React.ReactNode;
-  // optional small badge (e.g., rating) shown top-right of image
   badge?: string | number;
+  isSong?: boolean; // NEW: mark this card as a song
+  showFavourite?: boolean;
+  isFavourite?: boolean;
+  onFavouritePress?: () => void;
 };
 
-const Card: React.FC<Props> = ({ title, description, image, onPress, rightAction, badge }) => {
+const Card: React.FC<Props> = ({ title, description, image, onPress, rightAction, badge, isSong, showFavourite, isFavourite, onFavouritePress }) => {
+  const bg = useThemeColor({}, 'background');
+  const text = useThemeColor({}, 'text');
+
   return (
-    <TouchableOpacity
-      onPress={onPress}
-      activeOpacity={0.9}
-      style={styles.touchable}
-      accessibilityRole="button"
-    >
-      <View style={styles.card}>
+    <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.touchable} accessibilityRole="button">
+      <View style={[styles.card, { backgroundColor: bg }]}> 
         {image ? (
           <View style={styles.imageWrap}>
             <Image source={{ uri: image }} style={styles.image} />
@@ -29,21 +32,35 @@ const Card: React.FC<Props> = ({ title, description, image, onPress, rightAction
                 <Text style={styles.badgeText}>{badge}</Text>
               </View>
             )}
+
+            {/* MUSIC ICON OVERLAY */}
+            {isSong && (
+              <View style={styles.musicIcon}>
+                <Ionicons name="musical-notes" size={18} color="#fff" />
+              </View>
+            )}
           </View>
         ) : null}
 
         <View style={styles.content}>
-          <Text numberOfLines={2} style={styles.title}>
+          <Text numberOfLines={2} style={[styles.title, { color: text }]}>
             {title}
           </Text>
           {description ? (
-            <Text numberOfLines={2} style={styles.desc}>
+            <Text numberOfLines={2} style={[styles.desc, { color: useThemeColor({}, 'icon') }]}>
               {description}
             </Text>
           ) : null}
         </View>
 
         {rightAction ? <View style={styles.action}>{rightAction}</View> : null}
+
+        {/* Favourite toggle (small heart) */}
+        {showFavourite ? (
+          <TouchableOpacity style={styles.fav} onPress={onFavouritePress}>
+            <Ionicons name={isFavourite ? 'heart' : 'heart-outline'} size={18} color={isFavourite ? '#E50914' : '#fff'} />
+          </TouchableOpacity>
+        ) : null}
       </View>
     </TouchableOpacity>
   );
@@ -88,6 +105,16 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
+  musicIcon: {
+    position: 'absolute',
+    top: 8,
+    left: 8,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    padding: 6,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   content: {
     padding: 10,
   },
@@ -106,4 +133,13 @@ const styles = StyleSheet.create({
     top: 8,
     left: 8,
   },
+  fav: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    backgroundColor: 'rgba(0,0,0,0.35)',
+    padding: 6,
+    borderRadius: 20,
+  },
 });
+  

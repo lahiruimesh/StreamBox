@@ -1,6 +1,6 @@
-import React from 'react';
-import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { Tabs } from 'expo-router';
+import React from 'react';
 
 export default function TabsLayout() {
   return (
@@ -27,10 +27,10 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
-        name="settings"
+        name="explore"
         options={{
-          title: 'Settings',
-          tabBarIcon: () => <Ionicons name="settings-outline" size={20} />
+          title: 'Explore',
+          tabBarIcon: () => <Ionicons name="paper-plane-outline" size={20} />
         }}
       />
     </Tabs>

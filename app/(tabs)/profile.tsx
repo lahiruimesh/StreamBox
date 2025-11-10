@@ -1,38 +1,95 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { useTheme } from '@/app/ThemeProvider';
+import { useThemeColor } from '@/hooks/use-theme-color';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useRouter } from 'expo-router';
+import * as ImagePicker from 'expo-image-picker';
+import React, { useEffect, useState } from 'react';
+import { Alert, Image, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
 export default function Profile() {
-  const [user, setUser] = useState<{ name?: string; email?: string } | null>(null);
-  const router = useRouter();
+  const [name, setName] = useState('');
+  const [photo, setPhoto] = useState<string | null>(null);
+  const theme = useTheme();
 
   useEffect(() => {
-    AsyncStorage.getItem('user').then(s => { if (s) setUser(JSON.parse(s)); });
+    (async () => {
+      try {
+        const s = await AsyncStorage.getItem('user:profile');
+        if (s) {
+          const parsed = JSON.parse(s);
+          setName(parsed.name || '');
+          setPhoto(parsed.photo || null);
+        }
+      } catch (e) {
+        // ignore
+      }
+    })();
   }, []);
 
-  const handleLogout = async () => {
-    await AsyncStorage.removeItem('user');
-    router.replace('/login');
+  const pickPhoto = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission required', 'Please allow photo permissions to set profile photo');
+      return;
+    }
+
+    const res = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, quality: 0.8, allowsEditing: true, aspect: [1, 1] });
+    if (!res.canceled) {
+      setPhoto(res.assets?.[0]?.uri ?? (res as any).uri);
+    }
+  };
+
+  const save = async () => {
+    try {
+      await AsyncStorage.setItem('user:profile', JSON.stringify({ name, photo }));
+      Alert.alert('Saved', 'Profile saved');
+    } catch (e) {
+      Alert.alert('Error', 'Could not save profile');
+    }
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Profile</Text>
-      <Text style={styles.label}>Name: <Text style={styles.value}>{user?.name || 'Guest'}</Text></Text>
-      <Text style={styles.label}>Email: <Text style={styles.value}>{user?.email || '-'}</Text></Text>
-
-      <TouchableOpacity style={styles.button} onPress={handleLogout}>
-        <Text style={{ color: '#fff' }}>Log out</Text>
+    <View style={[styles.container, { backgroundColor: useThemeColor({}, 'background') }] }>
+      <TouchableOpacity onPress={pickPhoto} style={styles.avatarWrap}>
+        {photo ? (
+          <Image source={{ uri: photo }} style={styles.avatar} />
+        ) : (
+          <View style={styles.avatarPlaceholder}>
+            <Text style={{ color: useThemeColor({}, 'text') }}>Add Photo</Text>
+          </View>
+        )}
       </TouchableOpacity>
+
+      <TextInput style={[styles.input, { borderColor: useThemeColor({}, 'icon'), color: useThemeColor({}, 'text') }]} placeholder="Name" value={name} onChangeText={setName} placeholderTextColor={useThemeColor({}, 'icon')} />
+
+      <TouchableOpacity style={[styles.button, { backgroundColor: useThemeColor({}, 'tint') }]} onPress={save}>
+        <Text style={{ color: useThemeColor({}, 'background'), fontWeight: '700' }}>Save</Text>
+      </TouchableOpacity>
+
+      <View style={{ marginTop: 24 }}>
+        <Text style={{ color: useThemeColor({}, 'text') }}>Theme</Text>
+        <View style={{ flexDirection: 'row', marginTop: 8 }}>
+          <TouchableOpacity style={styles.smallBtn} onPress={() => theme.setTheme('light')}>
+            <Text>Light</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.smallBtn, { marginLeft: 8 }]} onPress={() => theme.setTheme('dark')}>
+            <Text>Dark</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={[styles.smallBtn, { marginLeft: 8 }]} onPress={() => theme.setTheme('system')}>
+            <Text>System</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  title: { fontSize: 22, fontWeight: '700', marginBottom: 12 },
-  label: { fontSize: 16, marginTop: 8 },
-  value: { fontWeight: '600' },
-  button: { marginTop: 20, backgroundColor: '#E50914', padding: 12, alignItems: 'center', borderRadius: 8 }
+  container: { flex: 1, padding: 16, alignItems: 'center' },
+  avatarWrap: { width: 120, height: 120, borderRadius: 999, overflow: 'hidden', marginBottom: 16 },
+  avatar: { width: '100%', height: '100%' },
+  avatarPlaceholder: { flex: 1, backgroundColor: '#888', justifyContent: 'center', alignItems: 'center' },
+  input: { width: '100%', padding: 12, borderRadius: 8, borderWidth: 1, borderColor: '#ddd', marginTop: 8 },
+  button: { marginTop: 12, backgroundColor: '#E50914', padding: 12, borderRadius: 8, alignItems: 'center', width: '100%' },
+  smallBtn: { padding: 8, borderRadius: 8, backgroundColor: '#eee' },
 });
+

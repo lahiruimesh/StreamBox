@@ -1,17 +1,20 @@
 // app/(tabs)/index.tsx
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { useRouter } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  FlatList,
   ActivityIndicator,
-  StyleSheet,
-  TouchableOpacity,
+  FlatList,
   ScrollView,
-  Dimensions
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View
 } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { addFavourite, removeFavourite } from '../../app/slices/favouritesSlice';
+import { RootState } from '../../app/store';
 import Card from '../../components/Card';
-import { useRouter } from 'expo-router';
 
 const API_KEY = '88915f72aa8685d9c6603cb2aee663de'; // keep your key or import from .env
 
@@ -39,6 +42,12 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('Popular');
   const router = useRouter();
+  const favourites = useSelector((s: RootState) => s.favourites.items);
+  const dispatch = useDispatch();
+  const bg = useThemeColor({}, 'background');
+  const text = useThemeColor({}, 'text');
+  const tint = useThemeColor({}, 'tint');
+  const surface = useThemeColor({}, 'icon');
 
   const movieCategories = [
     { name: 'Popular', url: `https://api.themoviedb.org/3/movie/popular?api_key=${API_KEY}&language=en-US&page=1` },
@@ -117,6 +126,13 @@ export default function Home() {
         description={item.overview}
         image={item.poster_path ? `https://image.tmdb.org/t/p/w342${item.poster_path}` : undefined}
         badge={item.vote_average ? item.vote_average.toFixed(1) : undefined}
+        showFavourite
+        isFavourite={favourites.some(f => String(f.id) === String(item.id))}
+        onFavouritePress={() => {
+          const exists = favourites.some(f => String(f.id) === String(item.id));
+          if (exists) dispatch(removeFavourite(item.id));
+          else dispatch(addFavourite({ ...item, id: item.id, savedType: 'movie' }));
+        }}
         onPress={() =>
           router.push({
             pathname: '/details/[id]',
@@ -133,6 +149,13 @@ export default function Home() {
         title={item.trackName}
         description={item.artistName}
         image={item.artworkUrl100 ? item.artworkUrl100.replace('100x100', '342x342') : undefined}
+        showFavourite
+        isFavourite={favourites.some(f => String(f.id) === String(item.trackId))}
+        onFavouritePress={() => {
+          const exists = favourites.some(f => String(f.id) === String(item.trackId));
+          if (exists) dispatch(removeFavourite(item.trackId));
+          else dispatch(addFavourite({ ...item, id: item.trackId, savedType: 'song' }));
+        }}
         onPress={() =>
           router.push({
             pathname: '/details/[id]',
@@ -146,26 +169,35 @@ export default function Home() {
   const dataToShow = mode === 'movies' ? movies : songs;
 
   return (
-    <View style={{ flex: 1 }}>
+    <View style={{ flex: 1, backgroundColor: bg }}>
       {/* Mode toggle */}
       <View style={styles.modeToggle}>
-        <TouchableOpacity onPress={() => { setMode('movies'); setSelectedCategory('Popular'); }} style={[styles.modeButton, mode === 'movies' && styles.modeButtonActive]}>
-          <Text style={[styles.modeText, mode === 'movies' && styles.modeTextActive]}>Movies</Text>
+        <TouchableOpacity
+          onPress={() => { setMode('movies'); setSelectedCategory('Popular'); }}
+          style={[styles.modeButton, { backgroundColor: mode === 'movies' ? tint : surface }]}
+        >
+          <Text style={[styles.modeText, { color: mode === 'movies' ? bg : text }]}>Movies</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={() => { setMode('songs'); setSelectedCategory('Trending'); }} style={[styles.modeButton, mode === 'songs' && styles.modeButtonActive]}>
-          <Text style={[styles.modeText, mode === 'songs' && styles.modeTextActive]}>Songs</Text>
+        <TouchableOpacity
+          onPress={() => { setMode('songs'); setSelectedCategory('Trending'); }}
+          style={[styles.modeButton, { backgroundColor: mode === 'songs' ? tint : surface }]}
+        >
+          <Text style={[styles.modeText, { color: mode === 'songs' ? bg : text }]}>Songs</Text>
         </TouchableOpacity>
       </View>
 
       {/* Category selector */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryContainer}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[styles.categoryContainer, { backgroundColor: bg }] }>
         {(mode === 'movies' ? movieCategories : songCategories).map((cat) => (
           <TouchableOpacity
             key={cat.name}
-            style={[styles.categoryButton, selectedCategory === cat.name && styles.categoryButtonActive]}
+            style={[
+              styles.categoryButton,
+              { backgroundColor: selectedCategory === cat.name ? tint : surface },
+            ]}
             onPress={() => setSelectedCategory(cat.name)}
           >
-            <Text style={[styles.categoryText, selectedCategory === cat.name && styles.categoryTextActive]}>{cat.name}</Text>
+            <Text style={[styles.categoryText, { color: selectedCategory === cat.name ? bg : text }]}>{cat.name}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>

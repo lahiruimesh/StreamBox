@@ -1,9 +1,10 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Slot } from 'expo-router';
 import React, { useEffect } from 'react';
 import { Provider } from 'react-redux';
-import { store } from './store';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setFavourites } from './slices/favouritesSlice';
-import { Slot } from 'expo-router';
+import { store } from './store';
+import { ThemeProvider } from './ThemeProvider';
 
 export default function ProviderApp() {
   useEffect(() => {
@@ -22,7 +23,9 @@ export default function ProviderApp() {
 
   return (
     <Provider store={store}>
-      <Slot />
+      <ThemeProvider>
+        <Slot />
+      </ThemeProvider>
     </Provider>
   );
 }
