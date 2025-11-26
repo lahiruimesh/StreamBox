@@ -1,7 +1,7 @@
 // app/welcome.tsx
-import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, Image } from 'react-native';
 import { useRouter } from 'expo-router';
+import React, { useEffect } from 'react';
+import { StyleSheet, Text, View } from 'react-native';
 
 export default function Welcome() {
   const router = useRouter();
@@ -17,15 +17,11 @@ export default function Welcome() {
 
   return (
     <View style={styles.container}>
-      {/* Logo */}
-      <Image
-        source={require('../assets/images/StreamBox.png')}
-        style={styles.logo}
-        resizeMode="contain"
-      />
-
-      {/* Title */}
-      <Text style={styles.title}>Welcome to StreamBox 🎬</Text>
+      {/* StreamBox Logo Text */}
+      <Text style={styles.logoText}>
+        <Text style={styles.logoRed}>Stream</Text>
+        <Text style={styles.logoWhite}>Box</Text>
+      </Text>
     </View>
   );
 }
@@ -35,16 +31,16 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#ffffffff', // Netflix-style red
+    backgroundColor: '#000',
   },
-  logo: {
-    width: 200,  // adjust as needed
-    height: 200,
-    marginBottom: 20,
-  },
-  title: {
-    color: '#000000ff',
-    fontSize: 24,
+  logoText: {
+    fontSize: 56,
     fontWeight: 'bold',
+  },
+  logoRed: {
+    color: '#E50914',
+  },
+  logoWhite: {
+    color: '#fff',
   },
 });

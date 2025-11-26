@@ -1,0 +1,272 @@
+// app/details/[id].tsx
+import { useThemeColor } from '@/hooks/use-theme-color';
+import { dataAPI } from '@/services/api';
+import { Ionicons } from '@expo/vector-icons';
+import { Audio } from 'expo-av';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import React, { useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux';
+import { addFavourite, removeFavourite } from '../slices/favouritesSlice';
+import { RootState } from '../store';
+
+export default function Details() {
+  const { id, type } = useLocalSearchParams<{ id: string; type?: 'movie' | 'song' }>();
+  const [item, setItem] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const router = useRouter();
+  const dispatch = useDispatch();
+  const favourites = useSelector((s: RootState) => s.favourites.items);
+  const isFav = favourites.some((f: any) => String(f.id ?? f.trackId) === String(id));
+  
+  // Theme colors - must be called unconditionally at top level
+  const backgroundColor = useThemeColor({}, 'background');
+  const textColor = useThemeColor({}, 'text');
+  const iconColor = useThemeColor({}, 'icon');
+
+  useEffect(() => {
+    if (!id) return;
+    (async () => {
+      setLoading(true);
+      try {
+        console.log('Fetching details for:', id, 'type:', type);
+        if (type === 'song') {
+          const result = await dataAPI.getSongById(parseInt(id));
+          console.log('Song result:', result);
+          setItem(result);
+        } else {
+          const result = await dataAPI.getMovieById(parseInt(id));
+          console.log('Movie result:', result);
+          setItem(result);
+        }
+      } catch (err) {
+        console.error('Details fetch err', err);
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [id, type]);
+
+  // Play / Pause handlers for song preview
+  const handlePlayPause = async () => {
+    if (!item || !item.previewUrl) {
+      Alert.alert('No preview available');
+      return;
+    }
+
+    try {
+      if (!soundRef.current) {
+        // load and play
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: item.previewUrl },
+          { shouldPlay: true }
+        );
+        soundRef.current = sound;
+        setIsPlaying(true);
+
+        // set a listener to update playing state when playback finishes
+        sound.setOnPlaybackStatusUpdate((status) => {
+          if (!status.isLoaded) return;
+          if (status.didJustFinish) {
+            setIsPlaying(false);
+            // unload sound to free resources
+            sound.unloadAsync().catch(() => {});
+            soundRef.current = null;
+          }
+        });
+      } else {
+        const status = await soundRef.current.getStatusAsync();
+        if (status.isLoaded && status.isPlaying) {
+          await soundRef.current.pauseAsync();
+          setIsPlaying(false);
+        } else if (status.isLoaded) {
+          await soundRef.current.playAsync();
+          setIsPlaying(true);
+        }
+      }
+    } catch (err) {
+      console.error('Audio play error', err);
+      Alert.alert('Playback error');
+    }
+  };
+
+  // Cleanup on unmount: stop & unload any sound
+  useEffect(() => {
+    return () => {
+      (async () => {
+        if (soundRef.current) {
+          try {
+            await soundRef.current.stopAsync();
+            await soundRef.current.unloadAsync();
+          } catch (e) {
+            /* ignore */
+          }
+          soundRef.current = null;
+        }
+      })();
+    };
+  }, []);
+
+  const toggleFav = () => {
+    if (!item) return;
+    if (isFav) {
+      dispatch(removeFavourite(item.id ?? item.trackId));
+    } else {
+      const payload = { ...(item), id: item.id ?? item.trackId, savedType: type || (item.trackId ? 'song' : 'movie') };
+      dispatch(addFavourite(payload));
+    }
+  };
+
+  if (loading) return <View style={[styles.center, { backgroundColor }]}><ActivityIndicator size="large" /></View>;
+  if (!item) return <View style={[styles.center, { backgroundColor }]}><Text style={{ color: textColor }}>Not found</Text></View>;
+
+  if (type === 'song' || item.trackId) {
+    // SONG DETAILS - No image shown
+    return (
+      <View style={[styles.container, { backgroundColor }]}>
+        <View style={styles.songIconContainer}>
+          <View style={styles.songIconCircle}>
+            <Ionicons name="musical-notes" size={48} color="#E50914" />
+          </View>
+        </View>
+        
+        <View style={styles.infoContainer}>
+          <Text style={[styles.title, { color: textColor }]}>{item.trackName}</Text>
+          <Text style={[styles.sub, { color: iconColor }]}>{item.artistName}</Text>
+          {item.collectionName && (
+            <Text style={[styles.album, { color: iconColor }]}>{item.collectionName}</Text>
+          )}
+          {item.primaryGenreName && (
+            <View style={styles.genreBadge}>
+              <Text style={styles.genreText}>{item.primaryGenreName}</Text>
+            </View>
+          )}
+        </View>
+
+        <View style={styles.buttonContainer}>
+          <TouchableOpacity style={styles.button} onPress={handlePlayPause}>
+            <Ionicons name={isPlaying ? 'pause' : 'play'} size={20} color="#fff" />
+            <Text style={styles.buttonText}>{isPlaying ? 'Pause Preview' : 'Play Preview'}</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={[styles.button, styles.buttonSecondary]} onPress={toggleFav}>
+            <Ionicons name={isFav ? 'heart' : 'heart-outline'} size={20} color="#fff" />
+            <Text style={styles.buttonText}>{isFav ? 'Remove from favourites' : 'Add to favourites'}</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    );
+  }
+
+  // MOVIE DETAILS
+  return (
+    <View style={[styles.container, { backgroundColor }]}>
+      <Image source={{ uri: `https://image.tmdb.org/t/p/w500${item.poster_path}` }} style={styles.movieImage} />
+      
+      <View style={styles.infoContainer}>
+        <Text style={[styles.title, { color: textColor }]}>{item.title}</Text>
+        {item.release_date && item.vote_average && (
+          <Text style={[styles.sub, { color: iconColor }]}>
+            {item.release_date.split('-')[0]} • ⭐ {item.vote_average.toFixed(1)}
+          </Text>
+        )}
+        <Text style={[styles.desc, { color: textColor }]}>{item.overview}</Text>
+      </View>
+
+      <View style={styles.buttonContainer}>
+        <TouchableOpacity style={styles.button} onPress={toggleFav}>
+          <Ionicons name={isFav ? 'heart' : 'heart-outline'} size={20} color="#fff" />
+          <Text style={styles.buttonText}>{isFav ? 'Remove from favourites' : 'Add to favourites'}</Text>
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  container: { flex: 1, padding: 20 },
+  songIconContainer: {
+    alignItems: 'center',
+    paddingVertical: 40,
+  },
+  songIconCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    backgroundColor: '#f5f5f5',
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+  },
+  movieImage: { 
+    width: '100%', 
+    height: 400, 
+    borderRadius: 16, 
+    marginBottom: 20,
+  },
+  infoContainer: {
+    marginBottom: 24,
+  },
+  title: { 
+    fontSize: 28, 
+    fontWeight: '700', 
+    marginBottom: 8,
+    lineHeight: 36,
+  },
+  sub: { 
+    fontSize: 16,
+    marginBottom: 12,
+    opacity: 0.8,
+  },
+  album: {
+    fontSize: 15,
+    marginBottom: 12,
+    opacity: 0.7,
+  },
+  desc: { 
+    fontSize: 16,
+    lineHeight: 24,
+    marginTop: 8,
+  },
+  genreBadge: {
+    alignSelf: 'flex-start',
+    backgroundColor: '#E50914',
+    paddingHorizontal: 16,
+    paddingVertical: 6,
+    borderRadius: 20,
+    marginTop: 12,
+  },
+  genreText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '600',
+  },
+  buttonContainer: {
+    marginTop: 'auto',
+    gap: 12,
+  },
+  button: { 
+    backgroundColor: '#E50914',
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    flexDirection: 'row',
+    gap: 8,
+  },
+  buttonSecondary: {
+    backgroundColor: '#444',
+  },
+  buttonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+});

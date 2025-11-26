@@ -4,33 +4,26 @@ import React from 'react';
 
 export default function TabsLayout() {
   return (
-    <Tabs screenOptions={{ headerShown: true }}>
+    <Tabs screenOptions={{ headerShown: false, tabBarStyle: { backgroundColor: '#000', borderTopColor: '#1a1a1a' }, tabBarActiveTintColor: '#fff', tabBarInactiveTintColor: '#666' }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Home',
-          tabBarIcon: () => <Ionicons name="home-outline" size={20} />
+          tabBarIcon: ({ color }) => <Ionicons name="home" size={24} color={color} />
         }}
       />
       <Tabs.Screen
         name="favourites"
         options={{
-          title: 'Favourites',
-          tabBarIcon: () => <Ionicons name="heart-outline" size={20} />
+          title: 'My List',
+          tabBarIcon: ({ color }) => <Ionicons name="download" size={24} color={color} />
         }}
       />
       <Tabs.Screen
         name="profile"
         options={{
           title: 'Profile',
-          tabBarIcon: () => <Ionicons name="person-outline" size={20} />
-        }}
-      />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: 'Explore',
-          tabBarIcon: () => <Ionicons name="paper-plane-outline" size={20} />
+          tabBarIcon: ({ color }) => <Ionicons name="person" size={24} color={color} />
         }}
       />
     </Tabs>

@@ -4,6 +4,7 @@ import { Appearance, ColorSchemeName } from 'react-native';
 
 type ThemeContextType = {
   theme: ColorSchemeName;
+  currentMode: ColorSchemeName | 'system';
   setTheme: (t: ColorSchemeName | 'system') => void;
 };
 
@@ -51,7 +52,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
-  return <ThemeContext.Provider value={{ theme, setTheme }}>{children}</ThemeContext.Provider>;
+  return <ThemeContext.Provider value={{ theme, currentMode: mode, setTheme }}>{children}</ThemeContext.Provider>;
 }
 
 export function useTheme() {

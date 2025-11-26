@@ -20,11 +20,13 @@ type Props = {
 const Card: React.FC<Props> = ({ title, description, image, onPress, rightAction, badge, isSong, showFavourite, isFavourite, onFavouritePress }) => {
   const bg = useThemeColor({}, 'background');
   const text = useThemeColor({}, 'text');
+  const cardBg = useThemeColor({ light: '#fff', dark: '#1c1c1e' }, 'background');
 
   return (
     <TouchableOpacity onPress={onPress} activeOpacity={0.9} style={styles.touchable} accessibilityRole="button">
-      <View style={[styles.card, { backgroundColor: bg }]}> 
-        {image ? (
+      <View style={[styles.card, { backgroundColor: cardBg }]}> 
+        {/* Don't show image for songs */}
+        {!isSong && image ? (
           <View style={styles.imageWrap}>
             <Image source={{ uri: image }} style={styles.image} />
             {badge !== undefined && (
@@ -32,22 +34,24 @@ const Card: React.FC<Props> = ({ title, description, image, onPress, rightAction
                 <Text style={styles.badgeText}>{badge}</Text>
               </View>
             )}
-
-            {/* MUSIC ICON OVERLAY */}
-            {isSong && (
-              <View style={styles.musicIcon}>
-                <Ionicons name="musical-notes" size={18} color="#fff" />
-              </View>
-            )}
           </View>
         ) : null}
 
-        <View style={styles.content}>
-          <Text numberOfLines={2} style={[styles.title, { color: text }]}>
+        {/* Show music icon for songs instead of image */}
+        {isSong && (
+          <View style={styles.songHeader}>
+            <View style={styles.musicIconLarge}>
+              <Ionicons name="musical-notes" size={32} color="#E50914" />
+            </View>
+          </View>
+        )}
+
+        <View style={[styles.content, isSong && styles.songContent]}>
+          <Text numberOfLines={isSong ? 2 : 2} style={[styles.title, { color: text }]}>
             {title}
           </Text>
           {description ? (
-            <Text numberOfLines={2} style={[styles.desc, { color: useThemeColor({}, 'icon') }]}>
+            <Text numberOfLines={isSong ? 1 : 2} style={[styles.desc, { color: useThemeColor({}, 'icon') }]}>
               {description}
             </Text>
           ) : null}
@@ -74,13 +78,13 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#fff',
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: 'hidden',
-    elevation: 3, // android
-    shadowColor: '#000', // ios
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.12,
-    shadowRadius: 8,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 12,
   },
   imageWrap: {
     width: '100%',
@@ -93,11 +97,11 @@ const styles = StyleSheet.create({
   },
   badge: {
     position: 'absolute',
-    top: 8,
-    right: 8,
+    top: 10,
+    right: 10,
     backgroundColor: '#E50914',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
     borderRadius: 20,
   },
   badgeText: {
@@ -105,40 +109,54 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '700',
   },
-  musicIcon: {
-    position: 'absolute',
-    top: 8,
-    left: 8,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    padding: 6,
-    borderRadius: 20,
+  songHeader: {
+    width: '100%',
+    paddingVertical: 32,
+    backgroundColor: '#f5f5f5',
     alignItems: 'center',
     justifyContent: 'center',
   },
+  musicIconLarge: {
+    backgroundColor: '#fff',
+    padding: 20,
+    borderRadius: 50,
+    alignItems: 'center',
+    justifyContent: 'center',
+    elevation: 2,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+  },
   content: {
-    padding: 10,
+    padding: 14,
+  },
+  songContent: {
+    paddingVertical: 16,
   },
   title: {
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: '700',
     color: '#111',
     marginBottom: 6,
+    lineHeight: 20,
   },
   desc: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#666',
+    lineHeight: 18,
   },
   action: {
     position: 'absolute',
-    top: 8,
-    left: 8,
+    top: 10,
+    left: 10,
   },
   fav: {
     position: 'absolute',
-    top: 8,
-    right: 8,
-    backgroundColor: 'rgba(0,0,0,0.35)',
-    padding: 6,
+    top: 10,
+    right: 10,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    padding: 8,
     borderRadius: 20,
   },
 });

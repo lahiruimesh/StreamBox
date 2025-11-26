@@ -3,7 +3,6 @@ import { useThemeColor } from '@/hooks/use-theme-color';
 import { dataAPI } from '@/services/api';
 import { Ionicons } from '@expo/vector-icons';
 import { Audio } from 'expo-av';
-import { LinearGradient } from 'expo-linear-gradient';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import React, { useEffect, useRef, useState } from 'react';
 import {
@@ -163,27 +162,19 @@ export default function Details() {
               source={{ uri: `https://image.tmdb.org/t/p/w780${item.poster_path}` }}
               style={styles.backdropImage}
             />
-          ) : isSong && item.artworkUrl100 ? (
-            <Image
-              source={{ uri: item.artworkUrl100.replace('100x100', '600x600') }}
-              style={styles.backdropImage}
-            />
           ) : (
             <View style={[styles.backdropPlaceholder, { backgroundColor: '#1a1a1a' }]}>
               <Ionicons name="musical-notes" size={80} color="#444" />
             </View>
           )}
-          <LinearGradient
-            colors={['transparent', 'rgba(0,0,0,0.7)', '#000']}
-            style={styles.heroGradient}
-          />
+          <View style={styles.heroGradient} />
           
           {/* Back Button */}
           <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
             <Ionicons name="arrow-back" size={28} color="#fff" />
           </TouchableOpacity>
 
-          {/* Share Icon */}
+          {/* Download/Share Icons */}
           <View style={styles.topRightIcons}>
             <TouchableOpacity style={styles.iconButton}>
               <Ionicons name="share-outline" size={24} color="#fff" />
@@ -216,33 +207,24 @@ export default function Details() {
 
           {/* Action Buttons */}
           <View style={styles.actionButtons}>
-            {isSong && (
-              <TouchableOpacity 
-                style={styles.playButton}
-                onPress={handlePlayPause}
-              >
-                <Ionicons 
-                  name={isPlaying ? 'pause' : 'play'} 
-                  size={24} 
-                  color="#000" 
-                />
-                <Text style={styles.playButtonText}>
-                  {isPlaying ? 'Pause' : 'Play Song'}
-                </Text>
-              </TouchableOpacity>
-            )}
+            <TouchableOpacity style={styles.playButton}>
+              <Ionicons name="play" size={24} color="#000" />
+              <Text style={styles.playButtonText}>
+                {isSong ? 'Play Song' : 'Continue Watch'}
+              </Text>
+            </TouchableOpacity>
 
             <TouchableOpacity 
-              style={isSong ? styles.downloadButton : styles.playButton}
+              style={styles.downloadButton}
               onPress={handleFavourite}
             >
               <Ionicons 
-                name={isFav ? 'checkmark' : 'add'} 
+                name={isFav ? 'checkmark' : 'download-outline'} 
                 size={24} 
-                color={isSong ? '#fff' : '#000'} 
+                color="#fff" 
               />
-              <Text style={isSong ? styles.downloadButtonText : styles.playButtonText}>
-                {isFav ? 'In My List' : 'Add Favourite'}
+              <Text style={styles.downloadButtonText}>
+                {isFav ? 'In My List' : 'Download'}
               </Text>
             </TouchableOpacity>
           </View>
@@ -252,70 +234,15 @@ export default function Details() {
             {isSong ? `${item.artistName} - ${item.collectionName || 'Single'}` : item.overview || 'No description available.'}
           </Text>
 
-          {/* Movie Details */}
-          {!isSong && (
-            <View style={styles.detailsGrid}>
-              {item.genres && item.genres.length > 0 && (
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Genres:</Text>
-                  <Text style={[styles.detailValue, { color: textColor }]}>
-                    {item.genres.map((g: any) => g.name).join(', ')}
-                  </Text>
-                </View>
-              )}
-              
-              {item.runtime && (
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Runtime:</Text>
-                  <Text style={[styles.detailValue, { color: textColor }]}>
-                    {Math.floor(item.runtime / 60)}h {item.runtime % 60}m
-                  </Text>
-                </View>
-              )}
-              
-              {item.status && (
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Status:</Text>
-                  <Text style={[styles.detailValue, { color: textColor }]}>{item.status}</Text>
-                </View>
-              )}
-              
-              {item.original_language && (
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Language:</Text>
-                  <Text style={[styles.detailValue, { color: textColor }]}>
-                    {item.original_language.toUpperCase()}
-                  </Text>
-                </View>
-              )}
-              
-              {item.budget && item.budget > 0 && (
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Budget:</Text>
-                  <Text style={[styles.detailValue, { color: textColor }]}>
-                    ${(item.budget / 1000000).toFixed(1)}M
-                  </Text>
-                </View>
-              )}
-              
-              {item.revenue && item.revenue > 0 && (
-                <View style={styles.detailItem}>
-                  <Text style={styles.detailLabel}>Revenue:</Text>
-                  <Text style={[styles.detailValue, { color: textColor }]}>
-                    ${(item.revenue / 1000000).toFixed(1)}M
-                  </Text>
-                </View>
-              )}
-            </View>
-          )}
-
-          {/* Artist Info */}
-          {isSong && item.artistName && (
-            <View style={styles.infoSection}>
-              <Text style={[styles.infoLabel, { color: '#888' }]}>Artist:</Text>
-              <Text style={[styles.infoValue, { color: textColor }]}>{item.artistName}</Text>
-            </View>
-          )}
+          {/* Cast/Artist Info */}
+          <View style={styles.infoSection}>
+            <Text style={[styles.infoLabel, { color: '#888' }]}>
+              {isSong ? 'Artist:' : 'Director:'}
+            </Text>
+            <Text style={[styles.infoValue, { color: textColor }]}>
+              {isSong ? item.artistName : 'Siddharth Sengupta'}
+            </Text>
+          </View>
 
           {isSong && item.primaryGenreName && (
             <View style={styles.infoSection}>
@@ -323,6 +250,49 @@ export default function Details() {
               <Text style={[styles.infoValue, { color: textColor }]}>{item.primaryGenreName}</Text>
             </View>
           )}
+
+          {/* Episodes Section (for movies/shows) */}
+          {!isSong && (
+            <View style={styles.episodesSection}>
+              <View style={styles.sectionHeader}>
+                <Text style={[styles.sectionTitle, { color: textColor }]}>EPISODES</Text>
+                <Text style={styles.seasonSelector}>Season 1 ▼</Text>
+              </View>
+
+              <TouchableOpacity style={styles.episodeCard}>
+                <Image
+                  source={{
+                    uri: item.poster_path
+                      ? `https://image.tmdb.org/t/p/w342${item.poster_path}`
+                      : 'https://via.placeholder.com/160x90/333/fff?text=Episode',
+                  }}
+                  style={styles.episodeThumb}
+                />
+                <View style={styles.episodeInfo}>
+                  <View style={styles.episodeHeader}>
+                    <Text style={[styles.episodeTitle, { color: textColor }]}>1  Fort Boon Hai</Text>
+                    <TouchableOpacity style={styles.downloadIcon}>
+                      <Ionicons name="download-outline" size={20} color="#fff" />
+                    </TouchableOpacity>
+                  </View>
+                  <Text style={styles.episodeDescription} numberOfLines={3}>
+                    College graduate Velan's plans for his future are upended when
+                    internship pressure offers him a gig at the hottest club of...
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
+          )}
+
+          {/* Trailers & More */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: textColor }]}>TRAILERS & MORE</Text>
+          </View>
+
+          {/* More Like This */}
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: textColor }]}>MORE LIKE THIS</Text>
+          </View>
         </View>
       </ScrollView>
     </View>
@@ -355,7 +325,6 @@ const styles = StyleSheet.create({
   backdropImage: {
     width: '100%',
     height: '100%',
-    resizeMode: 'cover',
   },
   backdropPlaceholder: {
     width: '100%',
@@ -369,6 +338,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     height: 150,
+    backgroundColor: 'rgba(0,0,0,0.7)',
   },
   backButton: {
     position: 'absolute',
@@ -419,38 +389,38 @@ const styles = StyleSheet.create({
   // Action Buttons
   actionButtons: {
     flexDirection: 'row',
-    gap: 10,
-    marginBottom: 20,
+    gap: 12,
+    marginBottom: 24,
   },
   playButton: {
     flex: 1,
     flexDirection: 'row',
     backgroundColor: '#fff',
-    paddingVertical: 12,
-    borderRadius: 4,
+    paddingVertical: 14,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 8,
   },
   playButtonText: {
     color: '#000',
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
   },
   downloadButton: {
     flex: 1,
     flexDirection: 'row',
-    backgroundColor: 'rgba(109, 109, 110, 0.8)',
-    paddingVertical: 12,
-    borderRadius: 4,
+    backgroundColor: 'rgba(109, 109, 110, 0.7)',
+    paddingVertical: 14,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
+    gap: 8,
   },
   downloadButtonText: {
     color: '#fff',
-    fontSize: 15,
-    fontWeight: '700',
+    fontSize: 16,
+    fontWeight: '600',
   },
 
   // Description & Info
@@ -458,24 +428,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 22,
     marginBottom: 20,
-  },
-  detailsGrid: {
-    marginBottom: 24,
-    gap: 12,
-  },
-  detailItem: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-  },
-  detailLabel: {
-    fontSize: 14,
-    color: '#888',
-    width: 100,
-    fontWeight: '600',
-  },
-  detailValue: {
-    fontSize: 14,
-    flex: 1,
   },
   infoSection: {
     flexDirection: 'row',
@@ -488,5 +440,62 @@ const styles = StyleSheet.create({
   infoValue: {
     fontSize: 14,
     flex: 1,
+  },
+
+  // Episodes Section
+  episodesSection: {
+    marginTop: 32,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  seasonSelector: {
+    fontSize: 14,
+    color: '#888',
+  },
+  episodeCard: {
+    flexDirection: 'row',
+    backgroundColor: '#1a1a1a',
+    borderRadius: 8,
+    overflow: 'hidden',
+    marginBottom: 16,
+  },
+  episodeThumb: {
+    width: 160,
+    height: 90,
+  },
+  episodeInfo: {
+    flex: 1,
+    padding: 12,
+  },
+  episodeHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  episodeTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  downloadIcon: {
+    padding: 4,
+  },
+  episodeDescription: {
+    fontSize: 12,
+    color: '#888',
+    lineHeight: 16,
+  },
+
+  // Sections
+  section: {
+    marginTop: 32,
   },
 });
